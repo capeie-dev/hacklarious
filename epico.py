@@ -50,26 +50,25 @@ bat = np.c_[bat, np.full(len(bat),9)]
 #Function to plot 28x28 pixel drawings that are stored in a numpy array.
 #Specify how many rows and cols of pictures to display (default 4x5).  
 #If the array contains less images than subplots selected, surplus subplots remain empty.
-with tf.device("/gpu:0"):
 
 # merge the arm, apple, cat and car arrays, and split the features (X) and labels (y). Convert to float32 to save some memory.
-    X = np.concatenate((arm[:5000,:-1], apple[:5000,:-1], cat[:5000,:-1], car[:5000,:-1]), dog[:5000,:-1], horse[:5000,:-1], face[:5000,:-1], banana[:5000,:-1], bus[:5000,:-1], bat[:5000,:-1], axis=0).astype('float32')
-    y = np.concatenate((arm[:5000,-1], apple[:5000,-1], cat[:5000,-1], car[:5000,-1]), dog[:5000,:-1], horse[:5000,:-1], face[:5000,:-1], banana[:5000,:-1], bus[:5000,:-1], bat[:5000,:-1], axis=0).astype('float32') # the last column
+X = np.concatenate((arm[:5000,:-1], apple[:5000,:-1], cat[:5000,:-1], car[:5000,:-1]), dog[:5000,:-1], horse[:5000,:-1], face[:5000,:-1], banana[:5000,:-1], bus[:5000,:-1], bat[:5000,:-1], axis=0).astype('float32')
+y = np.concatenate((arm[:5000,-1], apple[:5000,-1], cat[:5000,-1], car[:5000,-1]), dog[:5000,:-1], horse[:5000,:-1], face[:5000,:-1], banana[:5000,:-1], bus[:5000,:-1], bat[:5000,:-1], axis=0).astype('float32') # the last column
 
-    # train/test split (divide by 255 to obtain normalized values between 0 and 1)
-    # I will use a 50:50 split, since I want to start by training the models on 5'000 samples and thus have plenty of samples to spare for testing.
-    X_train, X_test, y_train, y_test = train_test_split(X/255.,y,test_size=0.5,random_state=0)
+# train/test split (divide by 255 to obtain normalized values between 0 and 1)
+# I will use a 50:50 split, since I want to start by training the models on 5'000 samples and thus have plenty of samples to spare for testing.
+X_train, X_test, y_train, y_test = train_test_split(X/255.,y,test_size=0.5,random_state=0)
 
 
-    # ## CNN part
-    # one hot encode outputs
-    y_train_cnn = np_utils.to_categorical(y_train)
-    y_test_cnn = np_utils.to_categorical(y_test)
-    num_classes = y_test_cnn.shape[1]
+# ## CNN part
+# one hot encode outputs
+y_train_cnn = np_utils.to_categorical(y_train)
+y_test_cnn = np_utils.to_categorical(y_test)
+num_classes = y_test_cnn.shape[1]
 
-    # reshape to be [samples][pixels][width][height]
-    X_train_cnn = X_train.reshape(X_train.shape[0], 1, 28, 28).astype('float32')
-    X_test_cnn = X_test.reshape(X_test.shape[0], 1, 28, 28).astype('float32')
+# reshape to be [samples][pixels][width][height]
+X_train_cnn = X_train.reshape(X_train.shape[0], 1, 28, 28).astype('float32')
+X_test_cnn = X_test.reshape(X_test.shape[0], 1, 28, 28).astype('float32')
 
 # define the CNN model
 def cnn_model():
@@ -88,27 +87,27 @@ def cnn_model():
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     return model
 
-with tf.device("/gpu:0"):
-    np.random.seed(0)
-    # build the model
-    model_cnn = cnn_model()
-    # Fit the model
-    model_cnn.fit(X_train_cnn, y_train_cnn, validation_data=(X_test_cnn, y_test_cnn), epochs=15, batch_size=200)
-    # Final evaluation of the model
-    scores = model_cnn.evaluate(X_test_cnn, y_test_cnn, verbose=0)
 
-    print('Final CNN accuracy: ', scores[1])
-    # Saving the model prediction
-    y_pred_cnn = model_cnn.predict_classes(X_test_cnn, verbose=0)
-    model_cnn.save('my_model.h5')
-    image = cv2.imread('load.jpg')
-    image = cv2.resize(image, (28, 28))
-    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-    image = image.reshape((-1, 28, 28,1)) 
-    image = np.moveaxis(image, -1, 0)
-    digit = model_cnn.predict_classes(image)
-    print(lit[digit[0]])
-    # Finding the accuracy score
-    acc_cnn = accuracy_score(y_test, y_pred_cnn)
+np.random.seed(0)
+# build the model
+model_cnn = cnn_model()
+# Fit the model
+model_cnn.fit(X_train_cnn, y_train_cnn, validation_data=(X_test_cnn, y_test_cnn), epochs=15, batch_size=200)
+# Final evaluation of the model
+scores = model_cnn.evaluate(X_test_cnn, y_test_cnn, verbose=0)
 
-    print ('CNN accuracy: ',acc_cnn)
+print('Final CNN accuracy: ', scores[1])
+# Saving the model prediction
+y_pred_cnn = model_cnn.predict_classes(X_test_cnn, verbose=0)
+model_cnn.save('my_model.h5')
+image = cv2.imread('load.jpg')
+image = cv2.resize(image, (28, 28))
+image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+image = image.reshape((-1, 28, 28,1)) 
+image = np.moveaxis(image, -1, 0)
+digit = model_cnn.predict_classes(image)
+print(lit[digit[0]])
+# Finding the accuracy score
+acc_cnn = accuracy_score(y_test, y_pred_cnn)
+
+print ('CNN accuracy: ',acc_cnn)
